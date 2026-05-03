@@ -1,0 +1,24 @@
+# Core LangChain
+langchain
+langchain-community
+
+# Groq LLM
+langchain-groq
+
+# Embeddings (free HuggingFace)
+sentence-transformers
+transformers
+torch
+
+# Vector Database
+chromadb
+
+# PDF + text loading
+pypdf
+
+# Utilities
+tqdm
+python-dotenv
+
+# Optional (nice for debugging / notebooks)
+ipykernel
