@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
+from utils.config import DATA_PATH
 from utils.logger import setup_logger
 load_dotenv()
 
@@ -15,12 +16,12 @@ def safe_preview(text, limit=300):
     return text[:limit].encode("ascii", errors="replace").decode("ascii")
 
 
-def load_pdfs(folder_path):
+def load_pdfs(DATA_PATH):
     all_docs = []
 
-    for file in os.listdir(folder_path):
+    for file in os.listdir(DATA_PATH):
         if file.endswith(".pdf"):
-            path = os.path.join(folder_path, file)
+            path = os.path.join(DATA_PATH, file)
 
             try:
                 loader = PyPDFLoader(path)
@@ -51,5 +52,5 @@ def load_pdfs(folder_path):
     return all_docs
 
 if __name__ == "__main__":
-    docs = load_pdfs("data/raw")
+    docs = load_pdfs(DATA_PATH)
     logger.info(f"Total documents loaded: {len(docs)}")

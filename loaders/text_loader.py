@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from langchain_community.document_loaders import TextLoader
-from utils import config
+from utils.config import DATA_PATH
 from utils.logger import setup_logger
 
 load_dotenv()
@@ -54,5 +54,5 @@ def load_text(DATA_PATH):
     return all_docs
 
 if __name__ == "__main__":
-    docs = load_text(config.DATA_PATH) # This now matches the function name!
+    docs = load_text(DATA_PATH) # This now matches the function name!
     logger.info(f"Total documents loaded: {len(docs)}")
