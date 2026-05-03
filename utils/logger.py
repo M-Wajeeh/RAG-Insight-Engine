@@ -3,6 +3,10 @@ import sys
 
 
 def setup_logger(name="rag_logger", level=logging.INFO):
+    reconfigure_stdout = getattr(sys.stdout, "reconfigure", None)
+    if callable(reconfigure_stdout):
+        reconfigure_stdout(encoding="utf-8", errors="replace")
+
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
