@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from langchain_community.document_loaders import TextLoader
+from utils import config
 from utils.logger import setup_logger
 
 load_dotenv()
@@ -11,12 +12,16 @@ def clean_text(text):
     return text.replace("\n", " ").strip()
 
 
-def load_text(folder_path):
+def safe_preview(text, limit=300):
+    return text[:limit].encode("ascii", errors="replace").decode("ascii")
+
+
+def load_text(DATA_PATH):
     all_docs = []
 
-    for file in os.listdir(folder_path):
+    for file in os.listdir(DATA_PATH):
         if file.endswith(".txt"):  # Changed extension to .txt
-            path = os.path.join(folder_path, file)
+            path = os.path.join(DATA_PATH, file)
 
             try:
                 loader = TextLoader(path, encoding="utf-8") 
@@ -44,10 +49,10 @@ def load_text(folder_path):
         print(f"File: {doc.metadata.get('file_name')}")
         # Note: TextLoader doesn't auto-generate 'page' metadata, so this will print 'None'
         print(f"Page: {doc.metadata.get('page', 'N/A')}") 
-        print(doc.page_content[:300])
+        print(safe_preview(doc.page_content))
 
     return all_docs
 
 if __name__ == "__main__":
-    docs = load_text("data/raw") # This now matches the function name!
+    docs = load_text(config.DATA_PATH) # This now matches the function name!
     logger.info(f"Total documents loaded: {len(docs)}")

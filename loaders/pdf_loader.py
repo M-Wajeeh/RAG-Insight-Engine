@@ -11,6 +11,10 @@ def clean_text(text):
     return text.replace("\n", " ").strip()
 
 
+def safe_preview(text, limit=300):
+    return text[:limit].encode("ascii", errors="replace").decode("ascii")
+
+
 def load_pdfs(folder_path):
     all_docs = []
 
@@ -42,7 +46,7 @@ def load_pdfs(folder_path):
         print(f"\n--- Preview {i} ---")
         print(f"File: {doc.metadata.get('file_name')}")
         print(f"Page: {doc.metadata.get('page')}")
-        print(doc.page_content[:300])
+        print(safe_preview(doc.page_content))
 
     return all_docs
 
