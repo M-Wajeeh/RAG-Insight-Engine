@@ -1,6 +1,7 @@
 # Core LangChain
 langchain
 langchain-community
+langchain-text-splitters
 
 # Groq LLM
 langchain-groq
