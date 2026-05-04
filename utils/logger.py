@@ -2,29 +2,28 @@ import logging
 import sys
 
 
-def setup_logger(name="rag_logger", level=logging.INFO):
-    reconfigure_stdout = getattr(sys.stdout, "reconfigure", None)
-    if callable(reconfigure_stdout):
-        reconfigure_stdout(encoding="utf-8", errors="replace")
+_DEFAULT_NAME = "rag"
+_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+_DATEFMT = "%H:%M:%S"
+
+
+def setup_logger(name: str = _DEFAULT_NAME, level: int = logging.INFO) -> logging.Logger:
+    """Return a configured stdout logger.
+
+    Idempotent: calling with the same name reuses handlers instead of duplicating them.
+    """
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if callable(reconfigure):
+        reconfigure(encoding="utf-8", errors="replace")
 
     logger = logging.getLogger(name)
     logger.setLevel(level)
+    logger.propagate = False
 
-    # Avoid duplicate handlers
-    if logger.hasHandlers():
-        logger.handlers.clear()
-
-    # Console handler
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(level)
-
-    # Format
-    formatter = logging.Formatter(
-        "%(asctime)s | %(levelname)s | %(message)s",
-        datefmt="%H:%M:%S"
-    )
-    console_handler.setFormatter(formatter)
-
-    logger.addHandler(console_handler)
+    if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(level)
+        handler.setFormatter(logging.Formatter(_FORMAT, datefmt=_DATEFMT))
+        logger.addHandler(handler)
 
     return logger
