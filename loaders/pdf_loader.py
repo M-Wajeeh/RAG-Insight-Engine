@@ -1,56 +1,34 @@
 import os
-from dotenv import load_dotenv
+
 from langchain_community.document_loaders import PyPDFLoader
-from utils.config import DATA_PATH
+from langchain_core.documents import Document
+
+from loaders.common import enrich_metadata
 from utils.logger import setup_logger
-load_dotenv()
 
 logger = setup_logger(__name__)
 
 
-def clean_text(text):
-    return text.replace("\n", " ").strip()
+def load_pdfs(data_path: str) -> list[Document]:
+    if not os.path.isdir(data_path):
+        logger.warning("PDF data path does not exist: %s", data_path)
+        return []
 
+    all_docs: list[Document] = []
 
-def safe_preview(text, limit=300):
-    return text[:limit].encode("ascii", errors="replace").decode("ascii")
+    for file in sorted(os.listdir(data_path)):
+        if not file.lower().endswith(".pdf"):
+            continue
 
+        path = os.path.join(data_path, file)
+        try:
+            docs = PyPDFLoader(path).load()
+        except Exception as exc:
+            logger.error("Failed to load %s: %s", file, exc)
+            continue
 
-def load_pdfs(DATA_PATH):
-    all_docs = []
+        all_docs.extend(enrich_metadata(docs, file))
+        logger.info("Loaded PDF %s (%d pages)", file, len(docs))
 
-    for file in os.listdir(DATA_PATH):
-        if file.endswith(".pdf"):
-            path = os.path.join(DATA_PATH, file)
-
-            try:
-                loader = PyPDFLoader(path)
-                docs = loader.load()
-
-                for doc in docs:
-                    # clean content
-                    doc.page_content = clean_text(doc.page_content)
-
-                    # enrich metadata
-                    doc.metadata["file_name"] = file
-
-                logger.info(f"Loaded {file} ({len(docs)} pages)")
-                all_docs.extend(docs)
-
-            except Exception as e:
-                logger.error(f"Failed to load {file}: {e}")
-
-    logger.info(f"\nTotal documents loaded: {len(all_docs)}")
-
-    # preview (VERY IMPORTANT for debugging)
-    for i, doc in enumerate(all_docs[:2]):
-        print(f"\n--- Preview {i} ---")
-        print(f"File: {doc.metadata.get('file_name')}")
-        print(f"Page: {doc.metadata.get('page')}")
-        print(safe_preview(doc.page_content))
-
+    logger.info("Total PDF documents loaded: %d", len(all_docs))
     return all_docs
-
-if __name__ == "__main__":
-    docs = load_pdfs(DATA_PATH)
-    logger.info(f"Total documents loaded: {len(docs)}")

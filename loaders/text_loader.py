@@ -1,58 +1,34 @@
 import os
-from dotenv import load_dotenv
-from langchain_community.document_loaders import TextLoader
-from utils.config import DATA_PATH
-from utils.logger import setup_logger
 
-load_dotenv()
+from langchain_community.document_loaders import TextLoader
+from langchain_core.documents import Document
+
+from loaders.common import enrich_metadata
+from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-def clean_text(text):
-    return text.replace("\n", " ").strip()
 
+def load_texts(data_path: str) -> list[Document]:
+    if not os.path.isdir(data_path):
+        logger.warning("Text data path does not exist: %s", data_path)
+        return []
 
-def safe_preview(text, limit=300):
-    return text[:limit].encode("ascii", errors="replace").decode("ascii")
+    all_docs: list[Document] = []
 
+    for file in sorted(os.listdir(data_path)):
+        if not file.lower().endswith(".txt"):
+            continue
 
-def load_text(DATA_PATH):
-    all_docs = []
+        path = os.path.join(data_path, file)
+        try:
+            docs = TextLoader(path, encoding="utf-8").load()
+        except Exception as exc:
+            logger.error("Failed to load %s: %s", file, exc)
+            continue
 
-    for file in os.listdir(DATA_PATH):
-        if file.endswith(".txt"):  # Changed extension to .txt
-            path = os.path.join(DATA_PATH, file)
+        all_docs.extend(enrich_metadata(docs, file))
+        logger.info("Loaded text %s (%d documents)", file, len(docs))
 
-            try:
-                loader = TextLoader(path, encoding="utf-8") 
-                docs = loader.load()
-
-                for doc in docs:
-                    # clean content
-                    doc.page_content = clean_text(doc.page_content)
-
-                    # enrich metadata
-                    doc.metadata["file_name"] = file
-
-                
-                logger.info(f"Loaded {file} (1 document)")
-                all_docs.extend(docs)
-
-            except Exception as e:
-                logger.error(f"Failed to load {file}: {e}")
-
-    logger.info(f"\nTotal text documents loaded: {len(all_docs)}")
-
-
-    for i, doc in enumerate(all_docs[:2]):
-        print(f"\n--- Preview {i} ---")
-        print(f"File: {doc.metadata.get('file_name')}")
-        # Note: TextLoader doesn't auto-generate 'page' metadata, so this will print 'None'
-        print(f"Page: {doc.metadata.get('page', 'N/A')}") 
-        print(safe_preview(doc.page_content))
-
+    logger.info("Total text documents loaded: %d", len(all_docs))
     return all_docs
-
-if __name__ == "__main__":
-    docs = load_text(DATA_PATH) # This now matches the function name!
-    logger.info(f"Total documents loaded: {len(docs)}")
